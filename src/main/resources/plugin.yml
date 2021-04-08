@@ -1,0 +1,9 @@
+main: haxidenti.enchanto.Main
+name: Enchanto
+version: 1.0
+author: haxidenti
+api-version: 1.13
+commands:
+  enchanto:
+    description: Get enchant Book by exp
+    usage: /enchanto
