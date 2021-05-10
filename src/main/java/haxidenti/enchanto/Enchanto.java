@@ -150,41 +150,34 @@ public class Enchanto {
     static boolean removeEnchantments(Player player) {
         PlayerInventory inventory = player.getInventory();
         ItemStack item = inventory.getItemInMainHand();
-        ItemStack offItem = inventory.getItemInOffHand();
+        Material offItemType = item.getType();
 
-        ItemMeta meta = offItem.getItemMeta();
+        ItemMeta meta = item.getItemMeta();
         if (meta == null) {
             return false;
         }
         Map<Enchantment, Integer> enchants = meta.getEnchants();
-        int enchantsSize = enchants.size();
 
-        if (offItem.getType().equals(Material.AIR)) {
+
+        if (offItemType.equals(Material.AIR) || offItemType.equals(Material.ENCHANTED_BOOK)) {
             return false;
         }
         if (!meta.hasEnchants()) {
             return false;
         }
-        if (!item.getType().equals(Material.BOOK)) {
-            return false;
-        }
-        if (item.getAmount() < enchantsSize) {
-            return false;
-        }
         meta.getEnchants().forEach((enchantment, lvl) -> {
-            ItemStack book = new ItemStack(Material.ENCHANTED_BOOK);
-            {
-                ItemMeta bmeta = book.getItemMeta();
-                if (bmeta == null) {
-                    return;
+                ItemStack book = new ItemStack(Material.ENCHANTED_BOOK);
+                {
+                    ItemMeta bmeta = book.getItemMeta();
+                    if (bmeta == null) {
+                        return;
+                    }
+                    bmeta.addEnchant(enchantment, lvl, true);
+                    book.setItemMeta(bmeta);
+                    item.removeEnchantment(enchantment);
                 }
-                bmeta.addEnchant(enchantment, lvl, true);
-                book.setItemMeta(bmeta);
-                offItem.removeEnchantment(enchantment);
-            }
-            dropOnLocation(player.getLocation(), book);
+                dropOnLocation(player.getLocation(), book);
         });
-        item.setAmount(item.getAmount() - enchantsSize);
         player.updateInventory();
         return true;
     }
