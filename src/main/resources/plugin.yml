@@ -7,3 +7,6 @@ commands:
   enchanto:
     description: Get enchant Book by exp
     usage: /enchanto
+  deenchanto:
+    description: Unenchant items
+    usage: /deenchanto

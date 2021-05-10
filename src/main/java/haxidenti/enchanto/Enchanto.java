@@ -2,6 +2,7 @@ package haxidenti.enchanto;
 
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -25,8 +26,20 @@ public class Enchanto {
 
         if (type.equals(Material.COAL) || type.equals(Material.CHARCOAL)) {
             int addLevel = (int) Math.floor(item.getAmount() / 4f);
+
+            if (addLevel < 1) {
+                return false;
+            }
+
             player.setLevel(player.getLevel() + addLevel);
-            inventory.setItemInMainHand(new ItemStack(Material.AIR));
+
+            int amt = item.getAmount() % 4;
+
+            if (amt == 0) {
+                inventory.setItemInMainHand(new ItemStack(Material.AIR));
+            } else {
+                item.setAmount(amt);
+            }
             player.updateInventory();
             return true;
         } else if (type.equals(Material.BOOK)) {
@@ -54,6 +67,10 @@ public class Enchanto {
             ItemStack item2 = inventory.getItemInOffHand();
             if (item2.getType().equals(Material.AIR)) {
                 player.sendMessage(ChatColor.RED + "Cannot be AIR");
+                return false;
+            }
+            if (item2.getAmount() != 1) {
+                player.sendMessage(ChatColor.RED + "Count of items should be 1");
                 return false;
             }
             ItemMeta meta2 = item2.getItemMeta();
@@ -130,10 +147,56 @@ public class Enchanto {
         return true;
     }
 
+    static boolean removeEnchantments(Player player) {
+        PlayerInventory inventory = player.getInventory();
+        ItemStack item = inventory.getItemInMainHand();
+        ItemStack offItem = inventory.getItemInOffHand();
+
+        ItemMeta meta = offItem.getItemMeta();
+        if (meta == null) {
+            return false;
+        }
+        Map<Enchantment, Integer> enchants = meta.getEnchants();
+        int enchantsSize = enchants.size();
+
+        if (offItem.getType().equals(Material.AIR)) {
+            return false;
+        }
+        if (!meta.hasEnchants()) {
+            return false;
+        }
+        if (!item.getType().equals(Material.BOOK)) {
+            return false;
+        }
+        if (item.getAmount() < enchantsSize) {
+            return false;
+        }
+        meta.getEnchants().forEach((enchantment, lvl) -> {
+            ItemStack book = new ItemStack(Material.ENCHANTED_BOOK);
+            {
+                ItemMeta bmeta = book.getItemMeta();
+                if (bmeta == null) {
+                    return;
+                }
+                bmeta.addEnchant(enchantment, lvl, true);
+                book.setItemMeta(bmeta);
+                offItem.removeEnchantment(enchantment);
+            }
+            dropOnLocation(player.getLocation(), book);
+        });
+        item.setAmount(item.getAmount() - enchantsSize);
+        player.updateInventory();
+        return true;
+    }
+
     static int getLevel(Player player) {
         GameMode gm = player.getGameMode();
         if (gm.equals(GameMode.CREATIVE)) return Integer.MAX_VALUE;
         else if (gm.equals(GameMode.SURVIVAL) || gm.equals(GameMode.ADVENTURE)) return player.getLevel();
         return 0;
+    }
+
+    static void dropOnLocation(Location location, ItemStack item) {
+        location.getWorld().dropItem(location, item);
     }
 }
